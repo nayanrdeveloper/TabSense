@@ -15,9 +15,17 @@ export function useTabs() {
     const [duplicateTabs, setDuplicateTabs] = useState([]);
     const [heavyTabs, setHeavyTabs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [autoCleanEnabled, setAutoCleanEnabled] = useState(false);
 
     useEffect(() => {
         fetchTabs();
+
+        // Load Auto Clean setting
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            chrome.storage.local.get(['autoCleanEnabled'], (result) => {
+                setAutoCleanEnabled(result.autoCleanEnabled || false);
+            });
+        }
 
         // Listen for tab updates
         const handleTabUpdate = () => fetchTabs();
@@ -124,14 +132,72 @@ export function useTabs() {
         }
     }
 
+    const groupTabsByDomain = async () => {
+        if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.tabs.group) return;
+
+        const tabs = await chrome.tabs.query({ currentWindow: true });
+        const groups = {};
+
+        // Group by hostname
+        tabs.forEach(tab => {
+            if (!tab.url || tab.pinned) return;
+            try {
+                const url = new URL(tab.url);
+                const hostname = url.hostname;
+                if (!groups[hostname]) {
+                    groups[hostname] = [];
+                }
+                groups[hostname].push(tab.id);
+            } catch (e) {
+                // ignore invalid urls
+            }
+        });
+
+        // Create groups
+        for (const [hostname, tabIds] of Object.entries(groups)) {
+            if (tabIds.length > 1) { // Only group if > 1 tab
+                const groupId = await chrome.tabs.group({ tabIds });
+                await chrome.tabGroups.update(groupId, { title: hostname });
+            }
+        }
+    };
+
+    const suspendAllInactive = async () => {
+        if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.tabs.discard) return;
+
+        const now = Date.now();
+        const INACTIVE_THRESHOLD = 30 * 60 * 1000;
+
+        // Re-fetch to be safe
+        const tabs = await chrome.tabs.query({ active: false, audible: false });
+        for (const tab of tabs) {
+            if (tab.pinned) continue;
+            if (tab.lastAccessed && (now - tab.lastAccessed > INACTIVE_THRESHOLD)) {
+                await chrome.tabs.discard(tab.id);
+            }
+        }
+        fetchTabs(); // Refresh UI
+    };
+
+    const toggleAutoClean = (enabled) => {
+        setAutoCleanEnabled(enabled);
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            chrome.storage.local.set({ autoCleanEnabled: enabled });
+        }
+    };
+
     return {
         allTabs,
         inactiveTabs,
         duplicateTabs,
         heavyTabs,
         loading,
+        autoCleanEnabled,
         closeTab,
         closeTabs,
+        groupTabsByDomain,
+        suspendAllInactive,
+        toggleAutoClean,
         refresh: fetchTabs
     };
 }

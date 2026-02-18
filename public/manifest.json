@@ -8,7 +8,8 @@
         "storage",
         "system.memory",
         "scripting",
-        "alarms"
+        "alarms",
+        "tabGroups"
     ],
     "host_permissions": [
         "<all_urls>"

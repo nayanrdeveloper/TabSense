@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { useTabs } from './hooks/useTabs';
 import { MetricCard } from './components/MetricCard';
-import { Activity, Copy, MonitorPlay, Zap, ArrowLeft, Trash2 } from 'lucide-react';
+import { Activity, Copy, MonitorPlay, Zap, ArrowLeft, Trash2, Layers, Archive, ToggleLeft, ToggleRight, ChevronRight } from 'lucide-react';
 
 function App() {
-  const { allTabs, inactiveTabs, duplicateTabs, heavyTabs, loading, closeTab, closeTabs } = useTabs();
-  const [view, setView] = useState('dashboard'); // 'dashboard', 'inactive', 'duplicates', 'heavy'
+  const {
+    allTabs, inactiveTabs, duplicateTabs, heavyTabs, loading,
+    autoCleanEnabled, toggleAutoClean, groupTabsByDomain, suspendAllInactive,
+    closeTab, closeTabs
+  } = useTabs();
+  const [view, setView] = useState('dashboard'); // 'dashboard', 'inactive', 'duplicates', 'heavy', 'autoclean'
 
   const totalTabs = allTabs.length;
 
@@ -81,11 +85,38 @@ function App() {
               onClick={() => setView('heavy')}
             />
 
-            <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 mt-6">
+            <div className="pt-2">
+              <button
+                onClick={() => setView('autoclean')}
+                className="w-full p-4 rounded-xl bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 hover:border-indigo-500/60 transition-all group flex items-center justify-between"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                    <Layers size={20} />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-white">Auto Clean</div>
+                    <div className="text-xs text-slate-400">Group & Suspend</div>
+                  </div>
+                </div>
+                <ChevronRight size={16} className="text-slate-600 group-hover:text-white" />
+              </button>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 mt-2">
               <h3 className="text-sm font-medium text-slate-400 mb-2">Total Active Tabs</h3>
               <div className="text-4xl font-bold text-indigo-400">{totalTabs}</div>
             </div>
           </div>
+        )}
+
+        {view === 'autoclean' && (
+          <AutoCleanView
+            autoCleanEnabled={autoCleanEnabled}
+            toggleAutoClean={toggleAutoClean}
+            onGroup={groupTabsByDomain}
+            onSuspend={suspendAllInactive}
+          />
         )}
 
         {(view === 'inactive' || view === 'duplicates' || view === 'heavy') && (
@@ -100,6 +131,59 @@ function App() {
     </div>
   );
 }
+
+function AutoCleanView({ autoCleanEnabled, toggleAutoClean, onGroup, onSuspend }) {
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 space-y-4">
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-white">Auto Clean</h2>
+        <p className="text-sm text-slate-400">Organize and optimize your browser.</p>
+      </div>
+
+      <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+        <div>
+          <div className="font-medium text-white">Background Auto-Clean</div>
+          <div className="text-xs text-slate-500">Suspend inactive tabs every 20m</div>
+        </div>
+        <button
+          onClick={() => toggleAutoClean(!autoCleanEnabled)}
+          className={`text-2xl transition-colors ${autoCleanEnabled ? 'text-indigo-400' : 'text-slate-600'}`}
+        >
+          {autoCleanEnabled ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3">
+        <button
+          onClick={onGroup}
+          className="p-4 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500/50 transition-all flex items-center space-x-3 text-left"
+        >
+          <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+            <Layers size={20} />
+          </div>
+          <div>
+            <div className="font-medium text-white">Group by Domain</div>
+            <div className="text-xs text-slate-400">Organize cluttered tabs</div>
+          </div>
+        </button>
+
+        <button
+          onClick={onSuspend}
+          className="p-4 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/50 transition-all flex items-center space-x-3 text-left"
+        >
+          <div className="p-2 bg-amber-500/10 rounded-lg text-amber-400">
+            <Archive size={20} />
+          </div>
+          <div>
+            <div className="font-medium text-white">Suspend Inactive</div>
+            <div className="text-xs text-slate-400">Free up memory now</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 
 function TabListView({ type, tabs, onClose, onCloseAll }) {
   const title = type === 'inactive' ? 'Inactive Tabs' : type === 'duplicates' ? 'Duplicate Tabs' : 'Heavy Tabs';
