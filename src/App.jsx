@@ -3,6 +3,7 @@ import { useTabs } from './hooks/useTabs';
 import { MetricCard } from './components/MetricCard';
 import { Activity, Copy, MonitorPlay, Zap, ArrowLeft, Trash2, Layers, Archive, ToggleLeft, ToggleRight, ChevronRight, Target, CircleAlert } from 'lucide-react';
 import { useFocus } from './hooks/useFocus';
+import { useHealthScore } from './hooks/useHealthScore';
 
 function App() {
   const {
@@ -16,14 +17,8 @@ function App() {
 
   const totalTabs = allTabs.length;
 
-  // Health Score Calculation (Simple version)
-  const healthScore = Math.max(0, 100 - (inactiveTabs.length * 2) - (duplicateTabs.length * 5) - (heavyTabs.length * 3));
-
-  const getHealthColor = (score) => {
-    if (score > 80) return 'text-emerald-400';
-    if (score > 50) return 'text-amber-400';
-    return 'text-rose-400';
-  }
+  // Health Score Calculation
+  const { score: healthScore, rank, color, barColor } = useHealthScore(allTabs, duplicateTabs);
 
   if (loading) {
     return (
@@ -45,15 +40,18 @@ function App() {
         ) : (
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-              <img src="/icons/icon.svg" alt="TabSense Logo" className="w-8 h-8 drop-shadow-lg" />
+              <img src="/icons/icon.png" alt="TabSense Logo" className="w-8 h-8 drop-shadow-lg" />
             </div>
             <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-amber-200 bg-clip-text text-transparent">TabSense</h1>
           </div>
         )}
 
-        <div className="flex items-center space-x-2 bg-slate-900 rounded-full px-3 py-1 border border-slate-800">
-          <span className="text-xs text-slate-400">Health:</span>
-          <span className={`text-sm font-bold ${getHealthColor(healthScore)}`}>{healthScore}</span>
+        <div className="flex flex-col items-end">
+          <div className="flex items-center space-x-2 bg-slate-900 rounded-full px-3 py-1 border border-slate-800">
+            <span className="text-xs text-slate-400">Health:</span>
+            <span className={`text-sm font-bold ${color}`}>{healthScore}</span>
+          </div>
+          <span className={`text-[10px] pr-2 pt-0.5 ${color} opacity-80`}>{rank}</span>
         </div>
       </header>
 
