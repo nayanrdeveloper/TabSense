@@ -44,10 +44,10 @@ function App() {
           </button>
         ) : (
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <Zap size={18} className="text-white fill-indigo-100" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+              <img src="/icons/icon.svg" alt="TabSense Logo" className="w-8 h-8 drop-shadow-lg" />
             </div>
-            <h1 className="text-lg font-bold tracking-tight">TabSense</h1>
+            <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-amber-200 bg-clip-text text-transparent">TabSense</h1>
           </div>
         )}
 
